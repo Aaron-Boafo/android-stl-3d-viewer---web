@@ -1,0 +1,485 @@
+================================================================================
+                        STL PRO VIEWER — llm.txt
+                  Comprehensive Application Documentation
+================================================================================
+
+Last updated: July 22, 2026
+
+================================================================================
+1. APP IDENTITY
+================================================================================
+
+Name:           STL Pro Viewer
+Short Name:     STL Pro
+Version:        0.0.0 (react-vite-tailwind)
+Type:           Browser-based 3D STL file viewer (Single Page Application)
+Description:    High-performance browser-based 3D STL file viewer with mesh
+                analysis, volume & surface area calculation, real-time
+                rendering, and screenshot capture. All processing happens
+                locally in the browser — no server uploads needed.
+
+Privacy-first:  All STL file processing is performed entirely on-device. Files
+                are never transmitted to any server or third-party service.
+
+================================================================================
+2. TECHNOLOGY STACK
+================================================================================
+
+Runtime & Framework:
+  - React 19.2.6
+  - React DOM 19.2.6
+  - TypeScript 5.9.3
+
+3D Rendering:
+  - Three.js 0.185.0
+  - React Three Fiber 9.6.1
+  - React Three Drei 10.7.7
+
+Build Tooling:
+  - Vite 7.3.2
+  - vite-plugin-singlefile 2.3.0 (bundles entire app into single HTML)
+  - @vitejs/plugin-react 5.1.1
+
+Styling:
+  - Tailwind CSS 4.1.17
+  - @tailwindcss/vite 4.1.17
+  - clsx 2.1.1 + tailwind-merge 3.4.0
+
+Routing:
+  - React Router DOM 7.18.1
+
+Icons:
+  - Lucide React 1.22.0
+
+Utilities:
+  - date-fns 4.4.0
+
+================================================================================
+3. FEATURES
+================================================================================
+
+Core:
+  - Load and render STL (stereolithography) 3D model files
+  - Supports both binary and ASCII STL formats via Three.js STLLoader
+  - Real-time 3D viewport with GPU-accelerated rendering (WebGL)
+  - Perspective and Orthographic camera modes (toggleable)
+
+3D Viewport Controls:
+  - Orbit controls with damping for smooth rotation
+  - Pan and zoom with mouse/touch
+  - Infinite grid overlay (toggleable)
+  - Axis gizmo (XYZ orientation indicator, toggleable)
+  - Auto-fit bounds on model load (Drei Bounds)
+  - Stage environment lighting ("city" environment map)
+
+Display Settings (toggleable):
+  - Wireframe mode
+  - Edge overlay (Drei Edges component)
+  - Show/hide grid
+  - Show/hide axis gizmo
+  - Perspective/Orthographic camera switch
+
+Model Analysis:
+  - File size (human-readable format)
+  - Triangle count
+  - Vertex count
+  - Bounding box dimensions (X x Y x Z in mm)
+  - Volume calculation (signed tetrahedron method, displayed in cm³)
+  - Surface area calculation (cross-product method, displayed in cm²)
+
+File Management:
+  - Upload STL files via file picker (accepts .stl only)
+  - Recent files list (up to 10 entries)
+  - Files stored in IndexedDB (database: "stl-pro-files", store: "files")
+  - Recent file metadata stored in localStorage (key: "recent_files")
+  - Load recent files from IndexedDB storage
+  - Clear individual recent files
+  - Clear all recent files (removes from IndexedDB and localStorage)
+
+Export & Sharing:
+  - Screenshot capture (downloads as stl-screenshot-{timestamp}.png)
+  - Native Web Share API integration (share model preview image)
+  - Share includes model name and preview PNG
+
+UI:
+  - Responsive sidebar (drawer on mobile, fixed on desktop)
+  - Model info overlay panel (file size, triangles, vertices, dimensions,
+    volume, surface area)
+  - Loading spinner with "Parsing STL Data..." overlay
+  - Error toast with dismiss action
+  - Model name and triangle count display in header
+  - "GPU Accelerated Rendering Active" status indicator
+  - Footer with Privacy Policy and Terms of Service links
+
+PWA Support:
+  - Web app manifest (manifest.json)
+  - Apple touch icon for iOS home screen
+  - Multiple icon sizes (192, 512, maskable variants)
+  - Favicon (ICO format)
+  - Theme color: #1a1a2e
+
+================================================================================
+4. FILE STRUCTURE
+================================================================================
+
+android-stl-3d-viewer - web/
+├── index.html                          Main HTML entry point (Vite)
+├── package.json                        Project dependencies & scripts
+├── package-lock.json                   Locked dependency versions
+├── tsconfig.json                       TypeScript configuration
+├── vite.config.ts                      Vite build configuration
+├── public/                             Static assets (served at root)
+│   ├── favicon.ico                     Browser tab icon (ICO)
+│   ├── apple-touch-icon.png            iOS home screen icon
+│   ├── icon-192.png                    PWA icon 192x192
+│   ├── icon-192-maskable.png           PWA maskable icon 192x192
+│   ├── icon-512.png                    PWA icon 512x512
+│   ├── icon-512-maskable.png           PWA maskable icon 512x512
+│   ├── manifest.json                   PWA web app manifest
+│   ├── llm.txt                         This documentation file
+│   └── README.txt                      Icon integration instructions
+├── src/
+│   ├── main.tsx                        React entry point (StrictMode + BrowserRouter)
+│   ├── App.tsx                         Main app component, routes, Home UI
+│   ├── index.css                       Global styles (Tailwind + Inter font)
+│   ├── features/
+│   │   └── viewer/
+│   │       ├── Viewer.tsx              Three.js Canvas, camera, lights, controls
+│   │       └── STLModel.tsx            Mesh rendering component (MeshPhongMaterial)
+│   ├── hooks/
+│   │   └── useSTL.ts                   STL loading, parsing, IndexedDB, state
+│   ├── pages/
+│   │   ├── PrivacyPolicy.tsx           Privacy Policy page (8 sections)
+│   │   └── TermsOfService.tsx          Terms of Service page (10 sections)
+│   └── utils/
+│       ├── cn.ts                       Tailwind class merge utility
+│       └── stlUtils.ts                 Volume/area calculations, formatBytes
+└── dist/                               Build output (single HTML + static assets)
+
+================================================================================
+5. ROUTES
+================================================================================
+
+  Path          Component         Description
+  ─────────     ──────────────    ──────────────────────────────────────────
+  /             Home              Main STL viewer with sidebar, viewport, toolbar
+  /privacy      PrivacyPolicy     Full privacy policy document
+  /terms        TermsOfService    Full terms of service document
+
+================================================================================
+6. KEY COMPONENTS & FILES
+================================================================================
+
+src/main.tsx
+  - Renders <App /> wrapped in <StrictMode> and <BrowserRouter>
+  - Entry point loaded by index.html via <script type="module" src="/src/main.tsx">
+
+src/App.tsx
+  - Defines <Routes> for /, /privacy, /terms
+  - Contains the <Home> component (main STL viewer UI)
+  - Home manages: sidebar state, display settings, file upload, screenshots,
+    sharing, recent files, model info overlay, loading/error states
+  - Settings state: wireframe, showEdges, showGrid, showAxes, orthographic,
+    backgroundColor, modelColor, intensity
+  - Helper components: Toggle, IconButton, StatItem (defined in same file)
+  - cn() utility function (clsx + twMerge) also defined inline
+
+src/features/viewer/Viewer.tsx
+  - React Three Fiber <Canvas> with shadows and antialiasing
+  - Configurable camera: <PerspectiveCamera> or <OrthographicCamera>
+  - Lighting: ambientLight, spotLight (with shadows), pointLight
+  - <Stage environment="city"> for environment-based lighting
+  - <Bounds fit clip observe margin={1.2}> for auto-fit
+  - <OrbitControls> with damping, min/max distance
+  - <Grid infiniteGrid> with configurable fade
+  - <GizmoHelper> with <GizmoViewport> for axis orientation
+  - Renders <STLModel> with geometry and display settings
+
+src/features/viewer/STLModel.tsx
+  - Renders <mesh> with received BufferGeometry
+  - Material: <MeshPhongMaterial> with configurable color, wireframe, opacity
+  - Optional edge overlay using Drei <Edges> component
+  - Supports double-sided rendering
+
+src/hooks/useSTL.ts
+  - Custom React hook managing all STL state
+  - IndexedDB operations: openDB(), saveFileToIDB(), getFileFromIDB(),
+    deleteFileFromIDB()
+  - Database: "stl-pro-files", Object Store: "files"
+  - STL parsing via Three.js STLLoader: parseSTL()
+  - Computes: bounding box, vertex normals, triangle count, volume, area
+  - Recent files: stored in localStorage (key: "recent_files", max 10)
+  - Returns: geometry, stats, loading, error, loadSTL, loadRecent,
+    removeRecent, clearAllRecent, clearModel
+
+src/utils/stlUtils.ts
+  - ModelStats interface: name, size, triangles, vertices, dimensions (x/y/z),
+    volume, area, lastOpened
+  - formatBytes(bytes, decimals) — human-readable file size
+  - calculateVolume(geometry) — signed tetrahedron volume calculation
+  - calculateArea(geometry) — cross-product triangle area calculation
+
+src/utils/cn.ts
+  - Simple clsx + tailwind-merge utility function
+
+src/pages/PrivacyPolicy.tsx
+  - Full privacy policy page (8 sections, see Section 9 below)
+
+src/pages/TermsOfService.tsx
+  - Full terms of service page (10 sections, see Section 10 below)
+
+================================================================================
+7. DATA STORAGE
+================================================================================
+
+IndexedDB:
+  - Database name: "stl-pro-files"
+  - Object store: "files"
+  - Key: filename (string)
+  - Value: ArrayBuffer (raw STL binary data)
+  - Purpose: Persists STL file data across sessions for "Recent Files"
+  - Data never leaves the device
+
+localStorage:
+  - Key: "recent_files"
+  - Value: JSON array of ModelStats objects (max 10 entries)
+  - Fields per entry: name, size, triangles, vertices, dimensions, volume,
+    area, lastOpened
+  - Purpose: Quick access to recent file metadata without loading full STL data
+  - Data never leaves the device
+
+In-Memory:
+  - THREE.BufferGeometry — loaded STL geometry held in component state
+  - Display settings — held in useState within Home component
+  - Geometry is discarded when a new file is loaded or the model is cleared
+
+================================================================================
+8. STL PROCESSING
+================================================================================
+
+Loading Pipeline:
+  1. User selects .stl file via <input type="file" accept=".stl">
+  2. File read as ArrayBuffer via file.arrayBuffer()
+  3. ArrayBuffer saved to IndexedDB for persistence
+  4. STLLoader.parse(arrayBuffer) converts to THREE.BufferGeometry
+  5. Bounding box computed (geom.computeBoundingBox())
+  6. Vertex normals computed (geom.computeVertexNormals())
+  7. Model statistics calculated (triangles, vertices, dimensions, volume, area)
+  8. Geometry rendered in Three.js Canvas
+
+STL Format Support:
+  - Binary STL (most common, compact)
+  - ASCII STL (text-based, larger file sizes)
+  - Both parsed by Three.js STLLoader
+
+Volume Calculation:
+  - Method: Signed tetrahedron volume
+  - Formula: volume += p1.dot(p2.cross(p3)) / 6.0 for each triangle
+  - Applied to all triangles in non-indexed geometry
+  - Returns absolute value of total signed volume
+  - Displayed in cm³ (divided by 1000)
+
+Surface Area Calculation:
+  - Method: Cross-product triangle area
+  - Formula: area += |v1 × v2| * 0.5 for each triangle
+  - v1 = p2 - p1, v2 = p3 - p1
+  - Displayed in cm² (divided by 100)
+
+Triangle Count:
+  - Computed as: geom.attributes.position.count / 3
+  - Each triangle has 3 vertices
+
+Vertex Count:
+  - Computed as: geom.attributes.position.count
+
+Dimensions:
+  - Extracted from bounding box: bbox.getSize(dimensions)
+  - Reported as X x Y x Z in mm
+
+================================================================================
+9. PRIVACY POLICY
+================================================================================
+
+STL Pro — Privacy Policy
+Last updated: July 22, 2026
+
+1. Introduction
+  Welcome to STL Pro ("we", "our", or "us"). We are committed to protecting
+  your privacy. This Privacy Policy explains how we collect, use, disclose,
+  and safeguard your information when you use our 3D STL file viewer
+  application.
+
+2. Information We Collect
+  STL Pro is designed to process 3D model files entirely within your browser.
+  We want to be transparent about what data we handle:
+
+  - STL File Data: All 3D model files you upload are processed locally in
+    your browser. Your files are never transmitted to our servers or any
+    third-party services.
+
+  - Local Storage: We store recent file metadata (file name and size only)
+    in your browser's local storage for convenience. This data never leaves
+    your device.
+
+  - Usage Data: We do not collect analytics, tracking data, or any
+    personally identifiable information.
+
+3. How We Use Your Information
+  Since we do not collect personal data, we do not use your information for
+  marketing, profiling, or any purpose beyond providing the core functionality
+  of the STL viewer. The file data you upload is used solely to render the 3D
+  model in your browser.
+
+4. Data Storage and Security
+  All processing happens on-device. Your STL files are loaded into your
+  browser's memory and are discarded when you close the tab or navigate away.
+  We implement reasonable security measures, but please be aware that no method
+  of electronic transmission or storage is 100% secure.
+
+5. Third-Party Services
+  STL Pro does not integrate with any third-party analytics, advertising, or
+  tracking services. We do not use cookies or similar tracking technologies.
+
+6. Children's Privacy
+  Our application is not directed to children under 13. We do not knowingly
+  collect personal information from children under 13. If you are a parent or
+  guardian and believe your child has provided us with personal information,
+  please contact us so we can take appropriate action.
+
+7. Changes to This Policy
+  We may update this Privacy Policy from time to time. We will notify you of
+  any changes by posting the new Privacy Policy on this page and updating the
+  "Last updated" date. Your continued use of the application after any changes
+  constitutes acceptance of the new policy.
+
+8. Contact Us
+  If you have any questions about this Privacy Policy, please contact us
+  through our application's support channels.
+
+================================================================================
+10. TERMS OF SERVICE
+================================================================================
+
+STL Pro — Terms of Service
+Last updated: July 22, 2026
+
+1. Acceptance of Terms
+  By accessing or using STL Pro ("the Application"), you agree to be bound
+  by these Terms of Service. If you do not agree with any part of these terms,
+  you may not use the Application.
+
+2. Description of Service
+  STL Pro is a browser-based 3D STL file viewer that allows users to upload,
+  inspect, and visualize 3D model files entirely within their web browser.
+  All processing is performed locally on your device.
+
+3. User Responsibilities
+  - You are responsible for the files you choose to upload and process.
+  - You agree not to use the Application for any unlawful purpose.
+  - You will not attempt to reverse engineer, decompile, or disassemble
+    the Application.
+  - You will not introduce malware or harmful code to the Application.
+
+4. Intellectual Property
+  The Application, including its design, code, and functionality, is the
+  intellectual property of the developers. The STL files you upload remain
+  your property. We claim no ownership over any user-uploaded content.
+
+5. Disclaimer of Warranties
+  The Application is provided "as is" and "as available" without warranties
+  of any kind, whether express or implied. We do not warrant that the
+  Application will be uninterrupted, error-free, or completely secure. You
+  use the Application at your own risk.
+
+6. Limitation of Liability
+  In no event shall we be liable for any indirect, incidental, special,
+  consequential, or punitive damages arising out of your use of or inability
+  to use the Application. This includes, but is not limited to, loss of data,
+  loss of profits, or business interruption.
+
+7. Service Availability
+  We reserve the right to modify, suspend, or discontinue the Application at
+  any time without prior notice. We shall not be liable for any modification,
+  suspension, or discontinuation of the service.
+
+8. Changes to Terms
+  We reserve the right to update these Terms of Service at any time. Changes
+  will be effective immediately upon posting. Your continued use of the
+  Application following any changes constitutes acceptance of the new terms.
+
+9. Governing Law
+  These Terms of Service shall be governed by and construed in accordance
+  with applicable laws, without regard to conflict of law principles.
+
+10. Contact Us
+  If you have any questions about these Terms of Service, please contact us
+  through our application's support channels.
+
+================================================================================
+11. BUILD & DEVELOPMENT
+================================================================================
+
+Scripts (package.json):
+  - npm run dev     — Start Vite dev server with hot module replacement
+  - npm run build   — Production build (outputs to dist/)
+  - npm run preview — Preview production build locally
+
+Build Output:
+  - dist/index.html — Single self-contained HTML file (all JS/CSS inlined
+    via vite-plugin-singlefile) — approximately 1,330 KB
+  - dist/           — Static assets (icons, manifest.json, README.txt,
+    llm.txt) copied from public/
+
+Vite Configuration (vite.config.ts):
+  - Plugins: react(), tailwindcss(), viteSingleFile()
+  - Path alias: @ → src/
+  - viteSingleFile() inlines all JS and CSS into a single HTML file for
+    embedding in Android WebView or standalone use
+
+Development Requirements:
+  - Node.js (LTS recommended)
+  - npm install to install dependencies
+  - Modern browser with WebGL support for 3D rendering
+
+================================================================================
+12. CONFIGURATION
+================================================================================
+
+Vite Config:
+  - Path alias: @ maps to src/ directory
+  - Single-file output: all assets inlined into one HTML file
+  - React plugin for JSX/TSX transformation
+  - Tailwind CSS plugin for utility-first styling
+
+TypeScript:
+  - Strict mode
+  - Module: ESNext
+  - Target: ESNext
+  - JSX: React JSX
+
+Tailwind:
+  - v4.1.17 with @tailwindcss/vite plugin
+  - Global styles in src/index.css
+  - Font family: Inter (with system-ui fallback)
+
+App Settings Defaults:
+  - wireframe: false
+  - showEdges: true
+  - showGrid: true
+  - showAxes: true
+  - orthographic: false
+  - backgroundColor: #0a0a0a
+  - modelColor: #86efac (green)
+  - intensity: 1
+
+Icon Set:
+  - favicon.ico: Browser tab icon (ICO, any size)
+  - apple-touch-icon.png: iOS home screen icon
+  - icon-192.png: PWA icon 192x192
+  - icon-192-maskable.png: PWA maskable icon 192x192
+  - icon-512.png: PWA icon 512x512
+  - icon-512-maskable.png: PWA maskable icon 512x512
+
+================================================================================
+                          END OF llm.txt
+================================================================================
